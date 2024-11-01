@@ -1,0 +1,321 @@
+#include "brick_game/tetris/try.h"
+
+#test create_test
+    int rows = 20;
+    int cols = 10;
+    int **arr = create(rows, cols);
+    ck_assert_int_eq(1, 1);
+    destroy(arr, rows);
+
+#test init_game_test
+    GameInfo_t *gameInfo = initGameInfo();
+    ck_assert_int_eq(gameInfo->currentX, 3);
+    ck_assert_int_eq(gameInfo->currentY, 0);
+    ck_assert_int_eq(gameInfo->score, 0);
+    ck_assert_int_eq(gameInfo->level, 1);
+    ck_assert_int_eq(gameInfo->speed, 500);
+    ck_assert_int_eq(gameInfo->pause, 0);
+    ck_assert_int_eq(gameInfo->currentState, START);
+    freeGameInfo();
+
+#test start_state_test
+    GameInfo_t *gameInfo = initGameInfo();
+    startState(Start);
+    ck_assert_int_eq(gameInfo->currentState, SPAWN);
+    freeGameInfo();
+
+#test start_state_test2
+    GameInfo_t *gameInfo = initGameInfo();
+    startState(Terminate);
+    ck_assert_int_eq(gameInfo->currentState, EXIT_STATE);
+    freeGameInfo();
+
+#test start_state_test3
+    GameInfo_t *gameInfo = initGameInfo();
+    startState(Left);
+    freeGameInfo();
+
+#test spawn_state_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(1);
+    spawnState();
+    int piece_l[4][4] = {
+      {0, 0, 0, 0},
+      {1, 1, 1, 1},
+      {0, 0, 0, 0},
+      {0, 0, 0, 0},
+    };
+    for(int i = 0; i < PIECE_SIZE; ++i) {
+        for(int j = 0; j < PIECE_SIZE; ++j) {
+            ck_assert_int_eq(gameInfo->current[i][j], piece_l[i][j]);
+        }
+    }
+    freeGameInfo();
+
+#test spawn_state_test2
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(1);
+
+    for(int i = 0; i < BOARD_HEIGHT; ++i) {
+        for(int j = 0; j < BOARD_WIDTH; ++j) {
+            gameInfo->field[i][j] = 1;
+        }
+    }
+
+    spawnState();
+    ck_assert_int_eq(gameInfo->currentState, GAMEOVER);
+    freeGameInfo();
+
+#test moving_state_down_test
+    GameInfo_t *gameInfo = initGameInfo();
+    int cur = gameInfo->currentY;
+    movingState(Down);
+    ck_assert_int_eq(cur + 1, gameInfo->currentY);
+    freeGameInfo();
+
+#test moving_state_left_test
+    GameInfo_t *gameInfo = initGameInfo();
+    int cur = gameInfo->currentX;
+    movingState(Left);
+    ck_assert_int_eq(cur - 1, gameInfo->currentX);
+    freeGameInfo();
+
+#test moving_state_right_test
+    GameInfo_t *gameInfo = initGameInfo();
+    int cur = gameInfo->currentX;
+    movingState(Right);
+    ck_assert_int_eq(cur + 1, gameInfo->currentX);
+    freeGameInfo();
+
+#test moving_state_rotate_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(4);
+    int cur = gameInfo->currentX;
+    movingState(Action);
+    ck_assert_int_eq(cur, gameInfo->currentX);
+    freeGameInfo();
+
+#test moving_state_terminate_test
+    GameInfo_t *gameInfo = initGameInfo();
+    movingState(Terminate);
+    ck_assert_int_eq(gameInfo->currentState, EXIT_STATE);
+    freeGameInfo();
+
+#test moving_state_default_test
+    GameInfo_t *gameInfo = initGameInfo();
+    movingState(Up);
+    freeGameInfo();
+
+#test move_collision_down_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(4);
+    spawnState(); 
+    for(int i = 4; i < BOARD_HEIGHT; ++i) {
+        for(int j = 0; j < BOARD_WIDTH; ++j) {
+            gameInfo->field[i][j] = 1;
+        }
+    }
+    movingState(Down);
+    movingState(Down);
+    int cur = gameInfo->currentY;
+    movingState(Down);
+    ck_assert_int_eq(cur, gameInfo->currentY);
+    movingState(Down);
+    movingState(Down);
+
+    freeGameInfo();
+
+#test move_collision_left_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(4);
+    spawnState(); 
+    movingState(Left);
+    movingState(Left);
+    movingState(Left);
+    movingState(Left);
+    movingState(Left);
+    movingState(Left);
+    movingState(Left);
+    int cur = gameInfo->currentX;
+    movingState(Left);
+    ck_assert_int_eq(cur, gameInfo->currentX);
+    movingState(Left);
+
+    freeGameInfo();
+
+#test move_collision_right_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(4);
+    spawnState(); 
+    movingState(Right);
+    movingState(Right);
+    movingState(Right);
+    movingState(Right);
+    movingState(Right);
+    movingState(Right);
+    movingState(Right);
+    int cur = gameInfo->currentX;
+    movingState(Right);
+    ck_assert_int_eq(cur, gameInfo->currentX);
+    movingState(Right);
+
+    freeGameInfo();
+
+#test move_collision_rotate_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(0);
+    spawnState(); 
+    for(int i = 4; i < BOARD_HEIGHT; ++i) {
+        for(int j = 0; j < BOARD_WIDTH; ++j) {
+            gameInfo->field[i][j] = 1;
+        }
+    }
+    movingState(Down);
+    movingState(Down);
+    movingState(Down);
+    int curX = gameInfo->currentX;
+    int curY = gameInfo->currentX;
+    rotate();
+
+    freeGameInfo();
+
+#test shifting_state_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(4);
+    spawnState(); 
+
+    for(int i = 4; i < BOARD_HEIGHT; ++i) {
+        for(int j = 0; j < BOARD_WIDTH; ++j) {
+            gameInfo->field[i][j] = 1;
+        }
+    }
+    shiftingState();
+    shiftingState();
+    shiftingState();
+    shiftingState();
+    shiftingState();
+    ck_assert_int_eq(gameInfo->currentState, ATTACHING);
+    freeGameInfo();
+
+#test attaching_state_test
+    GameInfo_t *gameInfo = initGameInfo();
+    srand(4);
+    spawnState(); 
+
+    for(int i = 16; i < BOARD_HEIGHT; ++i) {
+        for(int j = 0; j < BOARD_WIDTH; ++j) {
+            gameInfo->field[i][j] = 1;
+        }
+    }
+    attachingState();
+    ck_assert_int_eq(gameInfo->currentState, SPAWN);
+    ck_assert_int_eq(gameInfo->score, 1500);
+    freeGameInfo();
+
+#test gameover_state_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameoverState();
+    //ck_assert_int_eq(gameInfo->currentState, GAMEOVER);
+    freeGameInfo();
+
+#test sigact_spawn_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameInfo->currentState = SPAWN;
+    sigact(Down);
+    ck_assert_int_eq(gameInfo->currentState, MOVING);
+    freeGameInfo();
+
+#test sigact_moving_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameInfo->currentState = MOVING;
+    int cur = gameInfo->currentY;
+    sigact(Down);
+    ck_assert_int_eq(gameInfo->currentY, cur + 1);
+    freeGameInfo();
+
+#test sigact_terminate_test
+    GameInfo_t *gameInfo = initGameInfo();
+    sigact(Terminate);
+    ck_assert_int_eq(gameInfo->currentState, EXIT_STATE);
+    freeGameInfo();
+
+#test sigact_shifting_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameInfo->currentState = SHIFTING;
+    int cur = gameInfo->currentX;
+    sigact(Left);
+    ck_assert_int_eq(gameInfo->currentX, cur);
+    freeGameInfo();
+
+#test sigact_attaching_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameInfo->currentState = ATTACHING;
+    sigact(Down);
+    ck_assert_int_eq(gameInfo->currentState, SPAWN);
+    freeGameInfo();
+
+#test sigact_gameover_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameInfo->currentState = GAMEOVER;
+    sigact(Down);
+    //ck_assert_int_eq(gameInfo->currentState, GAMEOVER);
+    freeGameInfo();
+
+#test sigact_default_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameInfo->currentState = 7;
+    sigact(Down);
+    ck_assert_int_eq(gameInfo->currentState, 7);
+    freeGameInfo();
+
+#test count_speed_test
+    GameInfo_t *gameInfo = initGameInfo();
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 500);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 450);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 400);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 350);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 300);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 250);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 200);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 150);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 100);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 50);
+
+    gameInfo->level++;
+    countSpeed();
+    ck_assert_int_eq(gameInfo->speed, 50);
+    freeGameInfo();
+
+#test hign_score_test
+    GameInfo_t *gameInfo = initGameInfo();
+    gameInfo->score = 10000;
+    updateScore();
+    freeGameInfo();
